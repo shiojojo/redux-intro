@@ -1,53 +1,57 @@
-const initialStateAccount = {
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
+const initialState = {
   balance: 0,
   loan: 0,
   loanPurpose: '',
   isLoading: false,
 };
 
-export default function accountReducer(state = initialStateAccount, action) {
-  switch (action.type) {
-    case 'account/deposit':
-      return {
-        ...state,
-        balance: state.balance + action.payload,
-        isLoading: false,
-      };
-    case 'account/withdraw':
-      return {
-        ...state,
-        balance: state.balance - action.payload,
-      };
-    case 'account/requestLoan':
-      if (state.loan > 0) {
-        console.log('Loan already exists');
-        return state;
-      }
-      return {
-        ...state,
-        balance: state.balance + action.payload.loan,
-        loan: action.payload.loan,
-        loanPurpose: action.payload.purpose,
-      };
-    case 'account/payLoan':
-      return {
-        ...state,
-        loanPurpose: '',
-        balance: state.balance - state.loan,
-        loan: 0,
-      };
-    case 'account/loading':
-      return {
-        ...state,
-        isLoading: action.payload,
-      };
+// Create a slice for the account feature
+const accountSlice = createSlice({
+  name: 'account',
+  initialState,
+  reducers: {
+    deposit: (state, action) => {
+      state.balance += action.payload;
+      state.isLoading = false;
+    },
+    withdraw: (state, action) => {
+      state.balance -= action.payload;
+    },
+    requestLoan: {
+      prepare(loan, purpose) {
+        return { payload: { loan, purpose } };
+      },
+      reducer(state, action) {
+        if (state.loan > 0) {
+          console.log('Loan already exists');
+          return state;
+        }
+        state.balance += action.payload.loan;
+        state.loan = action.payload.loan;
+        state.loanPurpose = action.payload.purpose;
+      },
+    },
+    payLoan: state => {
+      state.loanPurpose = '';
+      state.balance -= state.loan;
+      state.loan = 0;
+    },
+    setLoading: (state, action) => {
+      state.isLoading = action.payload;
+    },
+  },
+});
 
-    default:
-      return state;
-  }
-}
+// Export actions
+export const { withdraw, requestLoan, payLoan, setLoading } =
+  accountSlice.actions;
 
-// Action creators
+// Export the reducer
+export default accountSlice.reducer;
+
+// // Action creators
 export function deposit(amount, currency) {
   if (currency === 'USD')
     return {
@@ -72,20 +76,20 @@ export function deposit(amount, currency) {
     });
   };
 }
-export function withdraw(amount) {
-  return {
-    type: 'account/withdraw',
-    payload: amount,
-  };
-}
-export function requestLoan(loan, purpose) {
-  return {
-    type: 'account/requestLoan',
-    payload: { loan, purpose },
-  };
-}
-export function payLoan() {
-  return {
-    type: 'account/payLoan',
-  };
-}
+// export function withdraw(amount) {
+//   return {
+//     type: 'account/withdraw',
+//     payload: amount,
+//   };
+// }
+// export function requestLoan(loan, purpose) {
+//   return {
+//     type: 'account/requestLoan',
+//     payload: { loan, purpose },
+//   };
+// }
+// export function payLoan() {
+//   return {
+//     type: 'account/payLoan',
+//   };
+// }
